@@ -14,14 +14,14 @@ Schedule::Schedule() {
 void Schedule::ScheTo(uint64_t id) {
     auto it = tasks_.find(id);
     assert(it != tasks_.end());
-    assert(it->second.state_ == TaskState::RUNNABLE);
+    assert(it->second.state_ == RUNNABLE);
     swapcontext(&schedule_, &it->second.ctx_);
 }
 
 void Schedule::ScheToMain(uint64_t from_id) {
     auto it = tasks_.find(from_id);
     assert(it != tasks_.end());
-    assert(it->second.state_ == TaskState::SUSPEND);
+    assert(it->second.state_ == SUSPEND);
     swapcontext(&it->second.ctx_, &schedule_);
 }
 
@@ -32,7 +32,7 @@ void Schedule::CreateTask(Task::FuncType func, void* arg, uint64_t from_id) {
         tmp_tasks_.push_back(std::move(tmp));
         auto it = tasks_.find(from_id);
         assert(it != tasks_.end());
-        assert(it->second.state_ == TaskState::RUNNABLE);
+        assert(it->second.state_ == RUNNABLE);
         swapcontext(&it->second.ctx_, &schedule_);
     }
     else {
@@ -43,14 +43,15 @@ void Schedule::CreateTask(Task::FuncType func, void* arg, uint64_t from_id) {
 void Schedule::Run() {
     while(true) {
         for(auto it = tasks_.begin(); it != tasks_.end();) {
-            if(it->second.state_ == TaskState::OVER) {
+            int state = it->second.state_.load();
+            if(state == OVER) {
                 it = tasks_.erase(it);
             }
             else {
-                if(it->second.state_ == TaskState::RUNNABLE) {
+                if(state == RUNNABLE) {
                     ScheTo(it->second.GetTaskId());
                     //从这个协程切换回调度器
-                    if(it->second.state_ == TaskState::OVER) {
+                    if(it->second.state_ == OVER) {
                         it = tasks_.erase(it);
                     }
                     else {

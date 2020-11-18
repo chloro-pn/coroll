@@ -4,29 +4,16 @@
 #include "futex_wrapper.h"
 #include <iostream>
 
-Task* global_task = nullptr;
-
-void func2(TaskArg arg) {
-    std::cout << "task : " << arg.self->GetTaskId() << std::endl;
-    std::cout << "suspend" << std::endl;
-    global_task = arg.self;
-    arg.self->Suspend();
-    std::cout << "be waked " << std::endl;
-}
-
 void func(TaskArg arg) {
-    std::cout << "hello world" << std::endl;
-    Schedule::instance().CreateTask(func2, nullptr, arg.self->GetTaskId());
+    int num = *(int*)arg.arg;
+    std::cout << "hello world, my arg is " << num << std::endl;
+    sleep(1);
+    Schedule::instance().CreateTask(func, new int(num + 1), arg.self->GetTaskId());
     std::cout << "after create task" << std::endl;
 }
 
 int main() {
-    std::thread th([]() {
-        sleep(2);
-        global_task->MakeRunnable();
-    });
-    Schedule::instance().CreateTask(func, nullptr, 0);
+    Schedule::instance().CreateTask(func, new int(0), 0);
     Schedule::instance().Run();
-    th.join();
     return 0;
 }

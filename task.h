@@ -3,8 +3,13 @@
 
 #include <ucontext.h>
 #include <functional>
+#include <atomic>
 
-enum class TaskState {RUNNABLE, SUSPEND, OVER};
+#define RUNNABLE 0
+#define SUSPEND 1
+#define OVER 2
+
+//enum class TaskState {RUNNABLE, SUSPEND, OVER};
 
 void MyWork(void* arg);
 
@@ -36,7 +41,7 @@ public:
 
     void Suspend();
 
-    void MakeRunnable();
+    void Resume();
 
 private:
     friend void MyWork(void* arg);
@@ -44,7 +49,8 @@ private:
     uint64_t id_;
     ucontext_t ctx_;
     char* stack_;
-    TaskState state_;
+    std::atomic<int> state_;
+    //TaskState state_;
     FuncType func_;
     TaskArg arg_;
 };
