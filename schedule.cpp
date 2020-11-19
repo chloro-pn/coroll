@@ -7,7 +7,7 @@ Schedule& Schedule::instance() {
     return obj;
 }
 
-#define FLAG_INIT
+#define FLAG_INIT 0
 
 Schedule::Schedule():flag_(FLAG_INIT) {
     getcontext(&schedule_);
