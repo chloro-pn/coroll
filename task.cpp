@@ -80,5 +80,5 @@ void Task::Resume() {
         return;
     }
     state_.store(RUNNABLE);
-    FutexWake();
+    Schedule::instance().WakeUp();
 }

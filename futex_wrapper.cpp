@@ -1,13 +1,11 @@
 #include "futex_wrapper.h"
 
-int* uaddr = new int(0);
-
-void FutexWait() {
+void FutexWait(void* uaddr, int excepted) {
     syscall(SYS_futex, uaddr, (FUTEX_WAIT | FUTEX_PRIVATE_FLAG),
-                   0, nullptr, nullptr, 0);
+                   excepted, nullptr, nullptr, 0);
 }
 
-void FutexWake() {
+void FutexWake(void* uaddr) {
     syscall(SYS_futex, uaddr, (FUTEX_WAKE | FUTEX_PRIVATE_FLAG),
-                   1, NULL, NULL, 0);
+                   1, nullptr, nullptr, 0);
 }

@@ -5,10 +5,8 @@
 #include <syscall.h>
 #include <unistd.h>
 
-extern int* uaddr;
+void FutexWait(void* uaddr, int expected);
 
-void FutexWait();
-
-void FutexWake();
+void FutexWake(void* uaddr);
 
 #endif // FUTEX_WRAPPER_H

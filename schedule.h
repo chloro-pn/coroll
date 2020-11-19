@@ -3,6 +3,7 @@
 
 #include <ucontext.h>
 #include <cstdint>
+#include <atomic>
 #include <vector>
 #include <unordered_map>
 #include "task.h"
@@ -25,8 +26,13 @@ public:
 
     void Run();
 
+    void WakeUp();
+
+    void Wait();
+
 private:
     ucontext_t schedule_;
+    std::atomic<int> flag_;
     std::unordered_map<uint64_t, Task> tasks_;
     std::vector<Task> tmp_tasks_;
 };

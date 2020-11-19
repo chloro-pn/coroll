@@ -7,7 +7,9 @@ Schedule& Schedule::instance() {
     return obj;
 }
 
-Schedule::Schedule() {
+#define FLAG_INIT
+
+Schedule::Schedule():flag_(FLAG_INIT) {
     getcontext(&schedule_);
 }
 
@@ -75,7 +77,18 @@ void Schedule::Run() {
                 break;
             }
             //TODO:WAIT_FROM_THERE.
-            FutexWait();
+            Wait();
         }
     }
+}
+
+void Schedule::WakeUp() {
+    flag_.fetch_add(1);
+    FutexWake(&flag_);
+}
+
+void Schedule::Wait() {
+    static int last_state_{FLAG_INIT};
+    FutexWait(&flag_, last_state_);
+    last_state_ = flag_.load();
 }
