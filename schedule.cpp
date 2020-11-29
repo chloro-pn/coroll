@@ -10,36 +10,40 @@ Schedule& Schedule::instance() {
 #define FLAG_INIT 0
 
 Schedule::Schedule():flag_(FLAG_INIT) {
-    getcontext(&schedule_);
+
 }
 
-void Schedule::ScheTo(uint64_t id) {
-    auto it = tasks_.find(id);
-    assert(it != tasks_.end());
-    assert(it->second.state_ == RUNNABLE);
-    swapcontext(&schedule_, &it->second.ctx_);
+void Schedule::ScheTo(Task* task) {
+    fcontext_transfer_t t = jump_fcontext(task->context_->context, task);
+    task->context_->context = t.prev_context;
 }
 
-void Schedule::ScheToMain(uint64_t from_id) {
-    auto it = tasks_.find(from_id);
-    assert(it != tasks_.end());
-    assert(it->second.state_ == SUSPEND);
-    swapcontext(&it->second.ctx_, &schedule_);
+void Schedule::ScheToMain(Task* task) {
+    assert(task->state_ == SUSPEND || task->state_ == OVER);
+    fcontext_transfer_t t = jump_fcontext(task->prev_context_, nullptr);
+    task->prev_context_ = t.prev_context;
 }
 
-void Schedule::CreateTask(Task::FuncType func, void* arg, uint64_t from_id) {
-    Task tmp(func, arg);
+uint64_t Schedule::CreateTask(Task::FuncType func, void* arg, uint64_t from_id) {
+    Task tmp(this, func, arg);
+    uint64_t result = tmp.GetTaskId();
     assert(tasks_.find(tmp.GetTaskId()) == tasks_.end());
     if(from_id != 0) {
         tmp_tasks_.push_back(std::move(tmp));
-        auto it = tasks_.find(from_id);
-        assert(it != tasks_.end());
-        assert(it->second.state_ == RUNNABLE);
-        swapcontext(&it->second.ctx_, &schedule_);
     }
     else {
         tasks_[tmp.GetTaskId()] = std::move(tmp);
     }
+    return result;
+}
+
+// should be thread-safe.
+bool Schedule::Resume(uint64_t id) {
+    auto it = tasks_.find(id);
+    if(it == tasks_.end()) {
+        return false;
+    }
+    it->second.Resume();
 }
 
 void Schedule::Run() {
@@ -51,7 +55,7 @@ void Schedule::Run() {
             }
             else {
                 if(state == RUNNABLE) {
-                    ScheTo(it->second.GetTaskId());
+                    ScheTo(&it->second);
                     //从这个协程切换回调度器
                     if(it->second.state_ == OVER) {
                         it = tasks_.erase(it);

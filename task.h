@@ -1,7 +1,7 @@
 #ifndef TASK_H
 #define TASK_H
 
-#include <ucontext.h>
+#include "fcontext.h"
 #include <functional>
 #include <atomic>
 
@@ -11,9 +11,10 @@
 
 //enum class TaskState {RUNNABLE, SUSPEND, OVER};
 
-void MyWork(void* arg);
+void MyWork(fcontext_transfer_t t);
 
 class Task;
+class Schedule;
 
 struct TaskArg {
     void* arg;
@@ -26,7 +27,7 @@ public:
 
     Task();
 
-    Task(FuncType func, void* arg);
+    Task(Schedule* sche, FuncType func, void* arg);
 
     Task(const Task& other) = delete;
     Task& operator=(const Task& other) = delete;
@@ -44,13 +45,13 @@ public:
     void Resume();
 
 private:
-    friend void MyWork(void* arg);
+    friend void MyWork(fcontext_transfer_t t);
     friend class Schedule;
+    Schedule* sche_;
     uint64_t id_;
-    ucontext_t ctx_;
-    char* stack_;
+    fcontext_state_t* context_;
+    fcontext_t prev_context_;
     std::atomic<int> state_;
-    //TaskState state_;
     FuncType func_;
     TaskArg arg_;
 };

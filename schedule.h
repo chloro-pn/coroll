@@ -1,7 +1,7 @@
 #ifndef SCHEDULE_H
 #define SCHEDULE_H
 
-#include <ucontext.h>
+#include <fcontext.h>
 #include <cstdint>
 #include <atomic>
 #include <vector>
@@ -10,19 +10,17 @@
 
 class Schedule {
 public:
-    ucontext_t& GetUContext() {
-        return schedule_;
-    }
-
     static Schedule& instance();
 
     Schedule();
 
-    void ScheTo(uint64_t id);
+    void ScheTo(Task* task);
 
-    void ScheToMain(uint64_t from_id);
+    void ScheToMain(Task* task);
 
-    void CreateTask(Task::FuncType func, void* arg, uint64_t from_id);
+    uint64_t CreateTask(Task::FuncType func, void* arg, uint64_t from_id);
+
+    bool Resume(uint64_t id);
 
     void Run();
 
@@ -31,7 +29,6 @@ public:
     void Wait();
 
 private:
-    ucontext_t schedule_;
     std::atomic<int> flag_;
     std::unordered_map<uint64_t, Task> tasks_;
     std::vector<Task> tmp_tasks_;
